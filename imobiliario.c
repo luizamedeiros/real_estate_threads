@@ -45,7 +45,7 @@ int main (int argc, char *argv[]) {
   for(t=0; t<NUM_THREADS; t++){
     printf("In thread main: creating thread %ld\n", t);
 
-    rc = pthread_create(&threads[t], NULL, thread_function, (void *)t);
+    rc = pthread_create(&threads[t], NULL, thread_inquilino_function, (void *)t);
     if (rc){
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
