@@ -12,7 +12,7 @@ void *thread_function(void *threadid) {
   printf("Thread inquilinos em execução #%ld!\n", tid);
   printf("Inquilino X aluga imovel: Y");
   // remover o imovel
-  sleep(10)
+  sleep(10);
   // adiciona imovel na lista de imovel entregue
   printf("Inquilino X entraga imovel: Y");
   pthread_exit(NULL);
