@@ -5,8 +5,8 @@
 #include <string.h>
 #include "lista_imovel.h"
 
-#define NUM_CORRETORES      4
-#define NUM_INQUILINOS      8
+#define NUM_CORRETORES      5
+#define NUM_INQUILINOS      5
 
 #define MAX_CODIGO          1000
 #define MAX_PRECO           3000
@@ -25,6 +25,42 @@ void *inquilino (void *arg) {
     int tempo_sleep = rand() % 5 + 1; // dormir entre 1 e 5 segundos
     sleep(tempo_sleep);
     
+    int acao = rand() % 2;
+
+    if (acao == 1) { //inquilino aluga imovel (tira da lista de imoveis disponiveis)
+    
+        pthread_mutex_lock(&mutex_disponiveis);
+        int comp_lista = comprimento(imoveis_disponiveis);
+        int imovel_idx = rand() % comp_lista; // cria indice randomico para remover da lista
+        struct nodo *temp = deleta_imovel(&imoveis_disponiveis, imovel_idx);
+        pthread_mutex_unlock(&mutex_disponiveis);
+
+        printf("Inquilino %d removeu o imovel %d (%s, R$%.2f, bairro %s) da lista de imoveis disponiveis\n", inquilinoid,
+                                                                                                             temp->imovel.codigo,
+                                                                                                             temp->imovel.endereco,
+                                                                                                             temp->imovel.preco,
+                                                                                                             temp->imovel.bairro);
+        free(temp);
+
+    }
+
+    else { //inquilino entrega um imovel (adiciona na lista de imoveis entregues)
+
+        Imovel imovel = { rand() % MAX_CODIGO, "Rua Aleatória", (float)(rand() % MAX_PRECO), "Bairro Aleatório" };
+        
+        // nao pode mudar a lista de imoveis disponiveis durante uma insercao
+        pthread_mutex_lock(&mutex_entregues);
+        insere_imovel(&imoveis_entregues, imovel);
+        pthread_mutex_unlock(&mutex_entregues);
+
+        printf("Inquilino %d adicionou o imovel %d (%s, R$%.2f, bairro %s) na lista de imoveis entregues\n", inquilinoid,
+                                                                                                             imovel.codigo,
+                                                                                                             imovel.endereco,
+                                                                                                             imovel.preco,
+                                                                                                             imovel.bairro);
+
+    }
+
     pthread_exit(NULL);
 }
 
@@ -50,29 +86,24 @@ void *corretor (void *arg) {
         }
         pthread_mutex_unlock(&mutex_entregues);
 
-        printf("Corretor %d dormiu %d segundos e moveu os imoveis da lista de entregues para a de disponiveis!\n", corretorid, tempo_sleep);
-        
-        // a sessao de prints abaixo nao esta lockada, o que pode ocasionar bugs
-        printf("Imoveis disponiveis: ");
-        print_lista_imoveis(imoveis_disponiveis);
-        printf("Imoveis entregues: ");
-        print_lista_imoveis(imoveis_entregues);
+        printf("Corretor %d moveu todos os imoveis da lista de entregues para a lista de disponiveis\n", corretorid);
     }
+
     else if (acao == 2) { // adiciona um novo imovel a lista de disponiveis
-        Imovel imovel = { rand() % MAX_CODIGO, "Rua Generico da Silva", (float)(rand() % MAX_PRECO), "Bairro Generico" };
+        Imovel imovel = { rand() % MAX_CODIGO, "Rua Generica", (float)(rand() % MAX_PRECO), "Bairro Generico" };
         
         // nao pode mudar a lista de imoveis disponiveis durante uma insercao
         pthread_mutex_lock(&mutex_entregues);
         insere_imovel(&imoveis_disponiveis, imovel);
         pthread_mutex_unlock(&mutex_entregues);
 
-        printf("Corretor %d dormiu %d segundos e adicionou o imovel { %d, %s, %.2f, %s } a lista de disponiveis\n", corretorid,
-                                                                                                                    tempo_sleep,
-                                                                                                                    imovel.codigo,
-                                                                                                                    imovel.endereco,
-                                                                                                                    imovel.preco,
-                                                                                                                    imovel.bairro);
+        printf("Corretor %d adicionou o imovel %d (%s, R$%.2f, bairro %s) na lista de imoveis disponiveis\n", corretorid,
+                                                                                                              imovel.codigo,
+                                                                                                              imovel.endereco,
+                                                                                                              imovel.preco,
+                                                                                                              imovel.bairro);
     }
+
     else { // remove um imovel da lista de disponiveis
 
         // ninguem pode editar essa lista enquanto é feita a contagem
@@ -83,13 +114,11 @@ void *corretor (void *arg) {
         struct nodo *temp = deleta_imovel(&imoveis_disponiveis, imovel_idx);
         pthread_mutex_unlock(&mutex_entregues);
 
-        printf("Corretor %d dormiu %d segundos e removeu o imovel { %d, %s, %.2f, %s } do indice %d\n", corretorid,
-                                                                                                        tempo_sleep,
-                                                                                                        temp->imovel.codigo,
-                                                                                                        temp->imovel.endereco,
-                                                                                                        temp->imovel.preco,
-                                                                                                        temp->imovel.bairro,
-                                                                                                        imovel_idx);
+        printf("Corretor %d removeu o imovel %d (%s, R$%.2f, bairro %s } da lista de imoveis disponiveis\n", corretorid,
+                                                                                                             temp->imovel.codigo,
+                                                                                                             temp->imovel.endereco,
+                                                                                                             temp->imovel.preco,
+                                                                                                             temp->imovel.bairro);
         free(temp);
     }
 
@@ -108,12 +137,12 @@ int main () {
     pthread_mutex_init(&mutex_entregues, NULL);
 
     // popular imoveis disponiveis e entregues
-    Imovel im1 = {11, "paula", 123, "liliana"};
-    Imovel im2 = {22, "victor", 456, "preuss"};
-    Imovel im3 = {33, "eduarda", 789, "bueno"};
-    Imovel im4 = {44, "luiza", 910, "hugo"};
-    Imovel im5 = {55, "medeiros", 111, "duda"};
-    Imovel im6 = {66, "zomigani", 213, "oliveira"};
+    Imovel im1 = {11, "Rua X", 123, "Trindade"};
+    Imovel im2 = {22, "Rua Y", 456, "Carvoeira"};
+    Imovel im3 = {33, "Rua Z", 789, "Centro"};
+    Imovel im4 = {44, "Rua A", 910, "Itacorubi"};
+    Imovel im5 = {55, "Rua B", 111, "Campeche"};
+    Imovel im6 = {66, "Rua C", 213, "Ingleses"};
 
     insere_imovel(&imoveis_disponiveis, im1);
     insere_imovel(&imoveis_disponiveis, im2);
@@ -151,10 +180,10 @@ int main () {
     pthread_mutex_destroy(&mutex_disponiveis);
     pthread_mutex_destroy(&mutex_entregues);
 
-    // printf("Imoveis disponiveis: ");
-    // print_lista_imoveis(imoveis_disponiveis);
-    // printf("Imoveis entregues: ");
-    // print_lista_imoveis(imoveis_entregues);
+    printf("Imoveis disponiveis: ");
+    print_lista_imoveis(imoveis_disponiveis);
+    printf("Imoveis entregues: ");
+    print_lista_imoveis(imoveis_entregues);
 
     return 0;
 }
