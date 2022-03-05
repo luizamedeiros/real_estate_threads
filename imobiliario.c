@@ -2,6 +2,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #define NUM_THREADS 5
 
 
@@ -9,26 +11,26 @@ void *thread_inquilino_function(void *threadid) {
   long tid;
   tid = (long)threadid;
   printf("Thread inquilinos em execução #%ld!\n", tid);
-  printf("Inquilino X aluga imovel: Y");
+  printf("Inquilino X aluga imovel: Y\n");
   // remover o imovel
-  sleep(10)
+  sleep(10);
   // adiciona imovel na lista de imovel entregue
-  printf("Inquilino X entraga imovel: Y");
+  printf("Inquilino X entraga imovel: Y\n");
   pthread_exit(NULL);
 } 
 
 void *thread_corretor_function(void *arg){
-  printf("Corretor X adiciona imovel: Y");
+  printf("Corretor X adiciona imovel: Y\n");
   pthread_exit(NULL);
 } 
 
 void *thread_imoveisDisp_function(void *arg){
-  printf("Corretor X disponibiliza imovel: Y");
+  printf("Corretor X disponibiliza imovel: Y\n");
   pthread_exit(NULL);
 } 
 
 void *thread_imoveisIndisp_function(void *arg){
-   printf("Corretor X indisponibiliza imovel: Y");
+   printf("Corretor X indisponibiliza imovel: Y\n");
   pthread_exit(NULL);
 } 
 
